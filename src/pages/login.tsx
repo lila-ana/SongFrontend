@@ -1,15 +1,21 @@
 import React, { useEffect } from "react";
 import { Input } from "antd";
 import { useDispatch, useSelector } from "react-redux";
-import { loginRequest, loginSuccess } from "../Store/Login/loginSlice";
+import { loginRequest } from "../Store/Login/loginSlice";
 import { RootState } from "../Store/rootReducer";
+import { Link, useNavigate } from "react-router-dom";
+import loginBg from "../assets/loginBg.jpg";
 
 const Login: React.FC = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const loading = useSelector((state: RootState) => state.loginReducer.loading);
   const error = useSelector((state: RootState) => state.loginReducer.error);
-  const token = useSelector((state: RootState) => state.loginReducer.token);
+  let token = useSelector((state: RootState) => state.loginReducer.token);
 
+  // let token = window.localStorage.getItem("token");
+  console.log(token, "hbhbjh");
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -20,13 +26,12 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     if (token) {
-      dispatch(loginSuccess(token));
-      window.location.href = "/dashboard";
+      navigate("/songs");
     }
-  }, [dispatch, token]);
+  }, [token]);
 
   return (
-    <div className=" ">
+    <div className="login-BG">
       <section className="text-gray-600 body-font">
         <div className="container px-5 py-12 mx-auto flex flex-wrap items-center">
           <div className="lg:w-3/5 md:w-1/2 md:pr-16 lg:pr-0 pr-0">
@@ -56,6 +61,7 @@ const Login: React.FC = () => {
                 type="email"
                 id="email"
                 name="email"
+                required
                 className="w-full bg-white rounded border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
               />
             </div>
@@ -70,6 +76,7 @@ const Login: React.FC = () => {
                 type="password"
                 id="password"
                 name="password"
+                required
                 className="w-full bg-white rounded border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
               />
             </div>
@@ -81,7 +88,13 @@ const Login: React.FC = () => {
               {loading ? "Loading..." : "Login"}
             </button>
             <p className="text-xs text-gray-500 mt-3">
-              Literally you probably haven't heard of them jean shorts.
+              Don't have and account yet?
+              <Link
+                to="/register"
+                className="text-green-500 underline hover:text-green-700 "
+              >
+                Sign Up
+              </Link>
             </p>
             {error && <div>{error}</div>}
           </form>

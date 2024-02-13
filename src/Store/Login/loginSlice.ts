@@ -7,13 +7,13 @@ interface LoginState {
   error: string | null;
 }
 
+const storedToken = localStorage.getItem("token");
 const initialState: LoginState = {
-  token: localStorage.getItem("token"),
-  isAuthenticated: false,
+  token: storedToken ? storedToken : null,
+  isAuthenticated: !!storedToken,
   loading: false,
   error: null,
 };
-
 const loginSlice = createSlice({
   name: "login",
   initialState,
@@ -30,6 +30,7 @@ const loginSlice = createSlice({
       state.isAuthenticated = true;
       state.token = action.payload;
       localStorage.setItem("token", action.payload);
+      console.log("first", action.payload);
     },
     loginFailure(state, action: PayloadAction<string>) {
       state.loading = false;

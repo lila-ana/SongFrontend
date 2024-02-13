@@ -1,29 +1,32 @@
 import React, { useEffect } from "react";
 import { Input } from "antd";
 import { useDispatch, useSelector } from "react-redux";
-import { loginRequest, loginSuccess } from "../Store/Login/loginSlice";
 import { RootState } from "../Store/rootReducer";
+import { createUserRequest } from "../Store/User/userSlice";
+import { useNavigate } from "react-router-dom";
 
-const Login: React.FC = () => {
+const Register: React.FC = () => {
   const dispatch = useDispatch();
-  const loading = useSelector((state: RootState) => state.loginReducer.loading);
-  const error = useSelector((state: RootState) => state.loginReducer.error);
-  const token = useSelector((state: RootState) => state.loginReducer.token);
+  const navigate = useNavigate();
+  const loading = useSelector((state: RootState) => state.userReducer.loading);
+  const error = useSelector((state: RootState) => state.userReducer.error);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const username = formData.get("username") as string;
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    dispatch(loginRequest({ email, password }));
+    dispatch(createUserRequest({ username, email, password }));
   };
 
-  useEffect(() => {
-    if (token) {
-      dispatch(loginSuccess(token));
-      window.location.href = "/dashboard";
-    }
-  }, [dispatch, token]);
+  navigate("/login");
+
+  // useEffect(() => {
+  //   if (token) {
+  //     window.location.href = "/login";
+  //   }
+  // }, [dispatch, token]);
 
   return (
     <div className=" ">
@@ -45,7 +48,7 @@ const Login: React.FC = () => {
             <h2 className="text-gray-900 text-lg font-medium title-font mb-5">
               Sign In
             </h2>
-            {/* <div className="relative mb-4">
+            <div className="relative mb-4">
               <label
                 htmlFor="username"
                 className="leading-7 text-sm text-gray-600"
@@ -58,7 +61,7 @@ const Login: React.FC = () => {
                 name="username"
                 className="w-full bg-white rounded border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
               />
-            </div> */}
+            </div>
             <div className="relative mb-4">
               <label
                 htmlFor="email"
@@ -92,7 +95,7 @@ const Login: React.FC = () => {
               disabled={loading}
               className="text-white bg-green-500 border-0 py-2 px-8 focus:outline-none hover:bg-green-600 rounded text-lg"
             >
-              {loading ? "Loading..." : "Login"}
+              {loading ? "Loading..." : "Register"}
             </button>
             <p className="text-xs text-gray-500 mt-3">
               Literally you probably haven't heard of them jean shorts.
@@ -150,4 +153,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default Register;
