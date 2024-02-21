@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { logout } from "../Store/Login/loginSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
-import { Button, Input, Modal } from "antd";
+import { useNavigate } from "react-router-dom";
+import { Button, Form, Input, Modal, Upload } from "antd";
 import { RootState } from "../Store/rootReducer";
 import {
   createSongRequest,
+  createSongSuccess,
   deleteSongRequest,
   fetchSongsRequest,
   updateSongRequest,
@@ -15,18 +16,29 @@ import { CiEdit } from "react-icons/ci";
 import { MdDeleteForever } from "react-icons/md";
 import { IoIosAddCircleOutline } from "react-icons/io";
 import { BiSolidShow } from "react-icons/bi";
-
+import { UploadOutlined } from "@ant-design/icons";
+import { UploadChangeParam } from "antd/es/upload";
+import { createSelector } from "@reduxjs/toolkit";
+import { debounce } from "lodash";
+import { v4 as uuidv4 } from "uuid";
 interface SongDetails {
   title: string;
   artist: string;
   album: string;
   genre: string;
+  path: string;
 }
 
 const Songs: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const token = useSelector((state: RootState) => state.loginReducer.token);
+
+  const selectToken = createSelector(
+    (state: RootState) => state.loginReducer.token,
+    (token) => token
+  );
+  const token = useSelector(selectToken);
+
   const songs = useSelector((state: any) => state.songReducer.songs);
 
   const [isEditMode, setIsEditMode] = useState(false);
@@ -39,12 +51,14 @@ const Songs: React.FC = () => {
     artist: "",
     album: "",
     genre: "",
+    path: "",
   });
   const [editSongDetails, setEditSongDetails] = useState<SongDetails>({
     title: "",
     artist: "",
     album: "",
     genre: "",
+    path: "",
   });
   const handleLogout = () => {
     dispatch(logout());
@@ -62,33 +76,60 @@ const Songs: React.FC = () => {
     setCreateSongModalVisible(true);
     setIsEditMode(false);
   };
-  const handleAddSong = (e: React.FormEvent<HTMLFormElement>): void => {
-    e.preventDefault();
+
+  // const handleUpdateSong = useCallback(
+  //   (songId: string | undefined, updatedSongDetails: SongDetails) => {
+  //     // Implement your update logic here
+  //   },
+  //   []
+  // );
+
+  // const handleAddSong = useCallback(() => {
+  //   if (isEditMode) {
+  //     handleUpdateSong(selectedSong?.id, editSongDetails);
+  //   } else {
+  //     dispatch(createSongRequest(newSongDetails: SongDetails));
+  //     setOpenModal(false);
+  //   }
+  // }, [dispatch, isEditMode, selectedSong, editSongDetails, newSongDetails]);
+  // Import uuid library for generating unique ids
+
+  const handleAddSong = useCallback(() => {
     if (isEditMode) {
       handleUpdateSong(selectedSong?.id, editSongDetails);
     } else {
-      dispatch(createSongRequest(newSongDetails));
-      setCreateSongModalVisible(false);
+      const newSongWithId = { ...newSongDetails, id: uuidv4() }; // Generate id for the new song
+      dispatch(createSongRequest());
+      dispatch(createSongSuccess(newSongWithId)); // Dispatch createSongSuccess with the new song including id
+      setOpenModal(false);
     }
-  };
+  }, [dispatch, isEditMode, selectedSong, editSongDetails, newSongDetails]);
+
   //============> INPUT CHANGE SECTION <===============
+
+  const debouncedHandleInputChange = useCallback(
+    debounce((e: React.ChangeEvent<HTMLInputElement>, field: string) => {
+      const { value } = e.target;
+      if (isEditMode) {
+        setEditSongDetails((prevDetails) => ({
+          ...prevDetails,
+          [field]: value,
+        }));
+      } else {
+        setNewSongDetails((prevDetails) => ({
+          ...prevDetails,
+          [field]: value,
+        }));
+      }
+    }, 300),
+    [isEditMode]
+  );
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     field: string
   ) => {
-    const { value } = e.target;
-    if (isEditMode) {
-      setEditSongDetails((prevDetails) => ({
-        ...prevDetails,
-        [field]: value,
-      }));
-    } else {
-      setNewSongDetails((prevDetails) => ({
-        ...prevDetails,
-        [field]: value,
-      }));
-    }
+    debouncedHandleInputChange(e, field);
   };
 
   //============> UPDATE SECTION <===============
@@ -124,6 +165,15 @@ const Songs: React.FC = () => {
   const handleNavigate = () => {
     navigate("/statistics");
   };
+
+  const normFile = (e: UploadChangeParam) => {
+    console.log("Upload event:", e);
+    if (Array.isArray(e)) {
+      return e;
+    }
+    return e && e.fileList;
+  };
+
   return (
     <div>
       {!token ? (
@@ -165,8 +215,8 @@ const Songs: React.FC = () => {
             </Button>
           </div>
           <div className="flex flex-wrap -m-4">
-            {songs?.map((items: any, index: number) => (
-              <div className="xl:w-1/3 md:w-1/2 p-4">
+            {songs?.map((items: any) => (
+              <div className="xl:w-1/3 md:w-1/2 p-4" key={items.id}>
                 <div className="border border-gray-200 p-6 rounded-lg">
                   <div className="w-10 h-10 inline-flex items-center justify-center rounded-full bg-green-100 text-green-500 mb-4">
                     <GiMusicalNotes />
@@ -205,15 +255,15 @@ const Songs: React.FC = () => {
           setOpenModal(false);
         }}
       >
-        <form onSubmit={handleAddSong}>
-          <div>
+        <Form onFinish={handleAddSong}>
+          <div className="m-[5px]">
             <label>Title:</label>
             <Input
               value={isEditMode ? editSongDetails.title : newSongDetails.title}
               onChange={(e) => handleInputChange(e, "title")}
             />
           </div>
-          <div>
+          <div className="m-[5px]">
             <label>Artist:</label>
             <Input
               value={
@@ -222,21 +272,34 @@ const Songs: React.FC = () => {
               onChange={(e) => handleInputChange(e, "artist")}
             />
           </div>
-          <div>
+          <div className="m-[5px]">
             <label>Album:</label>
             <Input
               value={isEditMode ? editSongDetails.album : newSongDetails.album}
               onChange={(e) => handleInputChange(e, "album")}
             />
           </div>
-          <div>
+          <div className="m-[5px]">
             <label>Genre:</label>
             <Input
               value={isEditMode ? editSongDetails.genre : newSongDetails.genre}
               onChange={(e) => handleInputChange(e, "genre")}
             />
           </div>
-        </form>
+
+          <div className="m-[5px]">
+            <Form.Item
+              name="upload"
+              label="Upload"
+              valuePropName="fileList"
+              getValueFromEvent={normFile}
+            >
+              <Upload name="logo" action="/upload.do" listType="picture">
+                <Button icon={<UploadOutlined />}>Click to upload</Button>
+              </Upload>
+            </Form.Item>
+          </div>
+        </Form>
       </Modal>
 
       <Modal

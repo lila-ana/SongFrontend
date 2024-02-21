@@ -1,10 +1,10 @@
 import React, { useEffect } from "react";
-import { Input } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import { loginRequest } from "../Store/Login/loginSlice";
 import { RootState } from "../Store/rootReducer";
 import { Link, useNavigate } from "react-router-dom";
-import loginBg from "../assets/loginBg.jpg";
+import { createSelector } from "@reduxjs/toolkit";
+import CustomForm, { FormField } from "../components/customForm";
 
 const Login: React.FC = () => {
   const dispatch = useDispatch();
@@ -12,16 +12,38 @@ const Login: React.FC = () => {
 
   const loading = useSelector((state: RootState) => state.loginReducer.loading);
   const error = useSelector((state: RootState) => state.loginReducer.error);
-  let token = useSelector((state: RootState) => state.loginReducer.token);
+  const selectToken = createSelector(
+    (state: RootState) => state.loginReducer.token,
+    (token) => token
+  );
+  const token = useSelector(selectToken);
+  const inputFields: FormField[] = [
+    {
+      name: "email",
+      type: "email",
+      placeholder: "Enter your password",
+      rules: [
+        { required: true, message: "Please input your email!" },
+        { type: "email", message: "Please enter a valid email!" },
+      ],
+      className:
+        "w-full bg-white rounded border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out",
+    },
+    {
+      name: "password",
+      type: "password",
+      placeholder: "Enter your password",
+      rules: [
+        { required: true, message: "Please input your password" },
+        { type: "password", message: "Please enter a valid email!" },
+      ],
+      className:
+        "w-full bg-white rounded border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out",
+    },
+  ];
 
-  // let token = window.localStorage.getItem("token");
-  console.log(token, "hbhbjh");
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    dispatch(loginRequest({ email, password }));
+  const handleSubmit = (values: any) => {
+    dispatch(loginRequest(values));
   };
 
   useEffect(() => {
@@ -31,7 +53,12 @@ const Login: React.FC = () => {
   }, [token]);
 
   return (
-    <div className="login-BG">
+    <div
+      className="bg-cover h-screen bg-center bg-no-repeat "
+      style={{
+        backgroundImage: `url('src/assets/loginBg.jpg')`,
+      }}
+    >
       <section className="text-gray-600 body-font">
         <div className="container px-5 py-12 mx-auto flex flex-wrap items-center">
           <div className="lg:w-3/5 md:w-1/2 md:pr-16 lg:pr-0 pr-0">
@@ -43,50 +70,19 @@ const Login: React.FC = () => {
               playlists, and discover new artists.
             </p>
           </div>
-          <form
-            onSubmit={handleSubmit}
-            className="lg:w-2/6 md:w-1/2 bg-gray-100 rounded-lg p-8 flex flex-col md:ml-auto w-full mt-10 md:mt-0"
-          >
+          <div className="lg:w-2/6 md:w-1/2 bg-gray-100 rounded-lg p-8 flex flex-col md:ml-auto w-full mt-10 md:mt-0">
             <h2 className="text-gray-900 text-lg font-medium title-font mb-5">
               Sign In
             </h2>
+
             <div className="relative mb-4">
-              <label
-                htmlFor="email"
-                className="leading-7 text-sm text-gray-600"
-              >
-                Email
-              </label>
-              <Input
-                type="email"
-                id="email"
-                name="email"
-                required
-                className="w-full bg-white rounded border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
+              <CustomForm
+                fields={inputFields}
+                onSubmit={handleSubmit}
+                buttonText={loading ? "Loading..." : "Login"}
+                buttonClassName="w-full text-white bg-green-500 border-0 py-2 px-8 focus:outline-none hover:bg-green-600 rounded text-lg"
               />
             </div>
-            <div className="relative mb-4">
-              <label
-                htmlFor="password"
-                className="leading-7 text-sm text-gray-600"
-              >
-                Password
-              </label>
-              <Input
-                type="password"
-                id="password"
-                name="password"
-                required
-                className="w-full bg-white rounded border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="text-white bg-green-500 border-0 py-2 px-8 focus:outline-none hover:bg-green-600 rounded text-lg"
-            >
-              {loading ? "Loading..." : "Login"}
-            </button>
             <p className="text-xs text-gray-500 mt-3">
               Don't have and account yet?
               <Link
@@ -97,7 +93,7 @@ const Login: React.FC = () => {
               </Link>
             </p>
             {error && <div>{error}</div>}
-          </form>
+          </div>
         </div>
       </section>
       <section className="text-gray-600 body-font">
